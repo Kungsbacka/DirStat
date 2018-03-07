@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using static System.Console;
 using static DirStat.NativeMethods;
 using Newtonsoft.Json;
@@ -158,14 +159,6 @@ namespace DirStat
 
         static Options _opt;
 
-        class Pattern
-        {
-            public string Text;
-            public bool Contains;
-            public bool StartsWith;
-            public bool EndsWith;
-            public string OriginalText;
-        }
 
         class Options
         {
@@ -174,7 +167,6 @@ namespace DirStat
             public string PatternFilePath;
             public string ListFilePath;
             public string OutputFilePath;
-            public List<Pattern> PatternList;
             public bool PrintUsageAndExit;
             public bool AnalyzeFileAge = true;
             public bool AnalyzeFileExtension = true;
@@ -372,55 +364,28 @@ namespace DirStat
                 _opt.DirectoryItemList = JsonConvert.DeserializeObject<List<DirectoryItem>>(content);
             }
             // Read pattern file
+            var matchDirectory = new List<Pattern>();
+            var matchFile = new List<Pattern>();
             if (!string.IsNullOrEmpty(_opt.PatternFilePath))
             {
-                string[] lines = null;
                 try
                 {
-                    lines = File.ReadAllLines(_opt.PatternFilePath);
+                    var patterns = PatternFileParser.Parse(_opt.PatternFilePath);
+                    matchDirectory = patterns.Where(t => t.Options.HasFlag(PatternOption.Directory)).ToList();
+                    matchFile = patterns.Where(t => t.Options.HasFlag(PatternOption.File)).ToList();
                 }
                 catch (FileNotFoundException)
                 {
                     PrintError($"File not found: {_opt.PatternFilePath}");
                     return 1;
                 }
-                foreach (string line in lines)
+                catch (ArgumentException e)
                 {
-                    if (string.IsNullOrWhiteSpace(line))
-                    {
-                        continue;
-                    }
-                    var pattern = new Pattern();
-                    pattern.OriginalText = line;
-                    if (line[0] == '*' && line[line.Length - 1] == '*')
-                    {
-                        pattern.Text = line.Trim('*').TrimEnd(' ');
-                        pattern.Contains = true;
-                    }
-                    else if (line[0] == '*')
-                    {
-                        pattern.Text = line.TrimStart('*').TrimEnd(' ');
-                        pattern.EndsWith = true;
-                    }
-                    else if (line[line.Length - 1] == '*')
-                    {
-                        pattern.Text = line.TrimEnd('*').TrimEnd(' ');
-                        pattern.StartsWith = true;
-                    }
-                    else
-                    {
-                        pattern.Text = line.TrimEnd(' ');
-                    }
-                    if (!string.IsNullOrEmpty(pattern.Text))
-                    {
-                        if (null == _opt.PatternList)
-                        {
-                            _opt.PatternList = new List<Pattern>();
-                        }
-                        _opt.PatternList.Add(pattern);
-                    }
+                    PrintError($"There seemes to be a problem with the pattern file.`r`nParser says {e.ToString()}");
+                    return 1;
                 }
             }
+
             var directoryItemList = new List<DirectoryItem>(_opt.DirectoryItemList.Count);
             foreach (var directoryItem in _opt.DirectoryItemList)
             {
@@ -467,6 +432,10 @@ namespace DirStat
                         do
                         {
                             string fullPath = $"{path}\\{findFileData.cFileName}";
+                            long createdFileTime = (long)((ulong)findFileData.ftCreationTime_dwHighDateTime << 32 |
+                                    findFileData.ftCreationTime_dwLowDateTime);
+                            long modifiedFileTime = (long)((ulong)findFileData.ftLastWriteTime_dwHighDateTime << 32 |
+                                    findFileData.ftLastWriteTime_dwLowDateTime);
                             if (fullPath.Length > 260)
                             {
                                 analysisData.LongPathList.Add(fullPath);
@@ -477,50 +446,17 @@ namespace DirStat
                                 {
                                     analysisData.DirectoryCount++;
                                     stack.Push(fullPath);
-                                }
-                            }
-                            else
-                            {
-                                long fileSize = (long)findFileData.nFileSizeHigh << 32 | findFileData.nFileSizeLow & 0xFFFFFFFFL;
-                                long createdFileTime = (long)((ulong)findFileData.ftCreationTime_dwHighDateTime << 32 |
-                                        findFileData.ftCreationTime_dwLowDateTime);
-                                long modifiedFileTime = (long)((ulong)findFileData.ftLastWriteTime_dwHighDateTime << 32 |
-                                        findFileData.ftLastWriteTime_dwLowDateTime);
-                                if (fileSize > analysisData.LargestFileSize)
-                                {
-                                    analysisData.LargestFileSize = fileSize;
-                                    analysisData.LargestFilePath = fullPath;
-                                }
-                                analysisData.TotalSize += fileSize;
-                                analysisData.FileCount++;
-                                bool patternMatch = false;
-                                if (null != _opt.PatternList)
-                                {
-                                    foreach (var pattern in _opt.PatternList)
+                                    foreach (var pattern in matchDirectory)
                                     {
-                                        if (pattern.Contains && findFileData.cFileName.IndexOf(pattern.Text, StringComparison.OrdinalIgnoreCase) > -1)
-                                        {
-                                            patternMatch = true;
-                                        }
-                                        else if (pattern.EndsWith && findFileData.cFileName.EndsWith(pattern.Text, StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            patternMatch = true;
-                                        }
-                                        else if (pattern.StartsWith && findFileData.cFileName.StartsWith(pattern.Text, StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            patternMatch = true;
-                                        }
-                                        else if (findFileData.cFileName.Equals(pattern.Text, StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            patternMatch = true;
-                                        }
-                                        if (patternMatch)
+                                        bool isMatch = pattern.Options.HasFlag(PatternOption.MatchOnName) && pattern.IsMatch(findFileData.cFileName);
+                                        isMatch |= pattern.Options.HasFlag(PatternOption.MatchOnPath) && pattern.IsMatch(fullPath);
+                                        if (isMatch)
                                         {
                                             analysisData.PatternMatchList.Add(new PatternMatch
                                             {
-                                                Pattern = pattern.OriginalText,
+                                                Pattern = pattern.PatternString,
                                                 Path = fullPath,
-                                                Size = fileSize,
+                                                Size = 0,
                                                 Created = DateTime.FromFileTime(createdFileTime),
                                                 Modified = DateTime.FromFileTime(modifiedFileTime)
                                             });
@@ -528,7 +464,36 @@ namespace DirStat
                                         }
                                     }
                                 }
-                                if (_opt.AnalyzeFileExtension)
+                            }
+                            else
+                            {
+                                long fileSize = (long)findFileData.nFileSizeHigh << 32 | findFileData.nFileSizeLow & 0xFFFFFFFFL;
+                                if (fileSize > analysisData.LargestFileSize)
+                                {
+                                    analysisData.LargestFileSize = fileSize;
+                                    analysisData.LargestFilePath = fullPath;
+                                }
+                                analysisData.TotalSize += fileSize;
+                                analysisData.FileCount++;
+                                foreach (var pattern in matchFile)
+                                {
+                                    bool isMatch = pattern.Options.HasFlag(PatternOption.MatchOnName) && pattern.IsMatch(findFileData.cFileName);
+                                    isMatch |= pattern.Options.HasFlag(PatternOption.MatchOnPath) && pattern.IsMatch(fullPath);
+                                    if (isMatch)
+                                    {
+                                        analysisData.PatternMatchList.Add(new PatternMatch
+                                        {
+                                            Pattern = pattern.PatternString,
+                                            Path = fullPath,
+                                            Size = fileSize,
+                                            Created = DateTime.FromFileTime(createdFileTime),
+                                            Modified = DateTime.FromFileTime(modifiedFileTime)
+                                        });
+                                        break;
+                                    }
+                                }
+                            }
+                            if (_opt.AnalyzeFileExtension)
                                 {
                                     if (!_opt.AnalyzeFileExtensionForPatternMatchOnly || (_opt.AnalyzeFileExtensionForPatternMatchOnly && patternMatch))
                                     {

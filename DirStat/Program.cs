@@ -190,7 +190,7 @@ namespace DirStat
                         case "-list":
                             if (i + 1 >= args.Length)
                             {
-                                _opt.ErrorMessage = "List option must be followed by a path to a file.";
+                                _opt.ErrorMessage = "--list must be followed by a path to a file.";
                                 break;
                             }
                             _opt.ListFilePath = args[++i];
@@ -199,7 +199,7 @@ namespace DirStat
                         case "-match":
                             if (i + 1 >= args.Length)
                             {
-                                _opt.ErrorMessage = "Match option must be followed by a path to a file.";
+                                _opt.ErrorMessage = "--match must be followed by a path to a file.";
                                 break;
                             }
                             _opt.PatternFilePath = args[++i];
@@ -220,7 +220,7 @@ namespace DirStat
                         case "-output-file":
                             if (i + 1 >= args.Length)
                             {
-                                _opt.ErrorMessage = "Match option must be followed by a path to a file.";
+                                _opt.ErrorMessage = "--output-file must be followed by a path to a file.";
                                 break;
                             }
                             _opt.OutputFilePath = args[++i];
@@ -292,11 +292,20 @@ namespace DirStat
             WriteLine("      a directory is specified, the directory is added to the list");
             WriteLine();
             WriteLine("  -m, --match <file>");
-            WriteLine("      read patterns from a file, one pattern per line. The patterns are");
-            WriteLine("      case insensitive and can begin and/or end with an asterisk (*) for");
-            WriteLine("      wilcard matching: abc => \"is exactly abc\", *abc => \"begins with abc\",");
-            WriteLine("      abc* => \"ends with abc\", *abc* => \"contains abc\"");
-            WriteLine("      If a file matches multiple patterns, only the first match is reported.");
+            WriteLine("      read patterns from a file, one pattern per line. Pattern matching");
+            WriteLine("      options can be inserted on a line beginning with two colons (::)");
+            WriteLine("      and separated by space. Options are: FILE for matching files,");
+            WriteLine("      DIRECTORY for matching directories, PATH for matching on full path,");
+            WriteLine("      NAME for matching on file name only, SIMPLE for simple wildcard");
+            WriteLine("      matching with asterisk (*) at the start, the end or both, and finally");
+            WriteLine("      REGEX for regular expressions. SIMPLE and REGEX cannot be combined.");
+            WriteLine("      All patterns that come after a line with options, are govenred by the");
+            WriteLine("      preceeding options. Multiple lines with options can be used. If no");
+            WriteLine("      options are specified, or if patterns come before an initial options");
+            WriteLine("      line, the following default options apply: simple match that match on");
+            WriteLine("      file and name only (SIMPLE FILE NAME). All matching (including regex)");
+            WriteLine("      is case insensitive. If a name or path matches multiple patterns, only");
+            WriteLine("      the first match is reported.");
             WriteLine();
             WriteLine("  -na, --no-age");
             WriteLine("      leave out file age statisticts in the result.");
@@ -381,7 +390,7 @@ namespace DirStat
                 }
                 catch (ArgumentException e)
                 {
-                    PrintError($"There seemes to be a problem with the pattern file.`r`nParser says {e.ToString()}");
+                    PrintError($"There seemes to be a problem with the pattern file. Parser says:\r\n{e.Message}");
                     return 1;
                 }
             }
@@ -475,9 +484,10 @@ namespace DirStat
                                 }
                                 analysisData.TotalSize += fileSize;
                                 analysisData.FileCount++;
+                                bool isMatch = false;
                                 foreach (var pattern in matchFile)
                                 {
-                                    bool isMatch = pattern.Options.HasFlag(PatternOption.MatchOnName) && pattern.IsMatch(findFileData.cFileName);
+                                    isMatch = pattern.Options.HasFlag(PatternOption.MatchOnName) && pattern.IsMatch(findFileData.cFileName);
                                     isMatch |= pattern.Options.HasFlag(PatternOption.MatchOnPath) && pattern.IsMatch(fullPath);
                                     if (isMatch)
                                     {
@@ -492,10 +502,9 @@ namespace DirStat
                                         break;
                                     }
                                 }
-                            }
-                            if (_opt.AnalyzeFileExtension)
+                                if (_opt.AnalyzeFileExtension)
                                 {
-                                    if (!_opt.AnalyzeFileExtensionForPatternMatchOnly || (_opt.AnalyzeFileExtensionForPatternMatchOnly && patternMatch))
+                                    if (!_opt.AnalyzeFileExtensionForPatternMatchOnly || (_opt.AnalyzeFileExtensionForPatternMatchOnly && isMatch))
                                     {
                                         string ext = Path.GetExtension(findFileData.cFileName).ToLower();
                                         FileExtension fileExtension;

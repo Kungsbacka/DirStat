@@ -122,20 +122,20 @@ namespace DirStat
                             case "FILE":
                                 options |= PatternOption.File;
                                 break;
-                            case "DICTIONARY":
+                            case "DIRECTORY":
                                 options |= PatternOption.Directory;
                                 break;
                             case "SIMPLE":
                                 if (options.HasFlag(PatternOption.Regex))
                                 {
-                                    throw new ArgumentException("REGEX and SIMPLE can not be combined.", "SIMPLE");
+                                    throw new ArgumentException("REGEX and SIMPLE can not be combined.");
                                 }
                                 options |= PatternOption.Simple;
                                 break;
                             case "REGEX":
                                 if (options.HasFlag(PatternOption.Simple))
                                 {
-                                    throw new ArgumentException("REGEX and SIMPLE can not be combined.", "REGEX");
+                                    throw new ArgumentException("REGEX and SIMPLE can not be combined.");
                                 }
                                 options |= PatternOption.Regex;
                                 break;
@@ -146,20 +146,20 @@ namespace DirStat
                                 options |= PatternOption.MatchOnPath;
                                 break;
                             default:
-                                throw new ArgumentException("Unknown pattern match option", item);
+                                throw new ArgumentException($"Unknown pattern match option \"{item}\".");
                         }
                     }
                     if (!options.HasFlag(PatternOption.File) && !options.HasFlag(PatternOption.Directory))
                     {
-                        throw new ArgumentException("Either FILE or DIRECTORY (or both) must be present i options.");
+                        throw new ArgumentException("FILE or DIRECTORY (or both) must be present i options.");
                     }
                     if (!options.HasFlag(PatternOption.Regex) && !options.HasFlag(PatternOption.Simple))
                     {
-                        throw new ArgumentException("Either SIMPLE or REGEX must be present i options.");
+                        throw new ArgumentException("SIMPLE or REGEX must be present i options.");
                     }
                     if (!options.HasFlag(PatternOption.MatchOnName) && !options.HasFlag(PatternOption.MatchOnPath))
                     {
-                        throw new ArgumentException("Either NAME or PATH (or both) must be present i options.");
+                        throw new ArgumentException("NAME or PATH (or both) must be present i options.");
                     }
                 }
                 else

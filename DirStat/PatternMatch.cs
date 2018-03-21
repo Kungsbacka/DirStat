@@ -38,19 +38,35 @@ namespace DirStat
 
         public SimplePattern(string pattern, PatternOption options) : base(pattern, options)
         {
+            if (string.IsNullOrEmpty(pattern))
+            {
+                throw new ArgumentException("Pattern string is null or empty", nameof(pattern));
+            }
             if (pattern[0] == '*' && pattern[pattern.Length - 1] == '*')
             {
-                subString = pattern.Trim('*');
+                if (pattern.Length < 3)
+                {
+                    throw new ArgumentException("Invalid pattern string", nameof(pattern));
+                }
+                subString = pattern.Substring(1, pattern.Length - 2);
                 contains = true;
             }
             else if (pattern[0] == '*')
             {
-                subString = pattern.TrimStart('*');
+                if (pattern.Length < 2)
+                {
+                    throw new ArgumentException("Invalid pattern string", nameof(pattern));
+                }
+                subString = pattern.Substring(1);
                 endsWith = true;
             }
             else if (pattern[pattern.Length - 1] == '*')
             {
-                subString = pattern.TrimEnd('*');
+                if (pattern.Length < 2)
+                {
+                    throw new ArgumentException("Invalid pattern string", nameof(pattern));
+                }
+                subString = pattern.Substring(0, pattern.Length - 2);
                 startsWith = true;
             }
             else

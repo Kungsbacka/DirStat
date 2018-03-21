@@ -93,7 +93,7 @@ namespace DirStat
     public class AnalysisData
     {
         public DirectoryItem Directory { get; set; }
-        public string LargestFilePath { get; set; }
+        public string LongestFilePath { get; set; }
         public long LargestFileSize { get; set; }
         public long TotalSize { get; set; }
         public long FileCount { get; set; }
@@ -480,7 +480,7 @@ namespace DirStat
                                 if (fileSize > analysisData.LargestFileSize)
                                 {
                                     analysisData.LargestFileSize = fileSize;
-                                    analysisData.LargestFilePath = fullPath;
+                                    analysisData.LongestFilePath = fullPath;
                                 }
                                 analysisData.TotalSize += fileSize;
                                 analysisData.FileCount++;

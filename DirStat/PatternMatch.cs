@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace DirStat
@@ -15,6 +16,37 @@ namespace DirStat
         MatchOnPath = 0b001000,
         Simple      = 0b010000,
         Regex       = 0b100000,
+    }
+
+    public static class PatternOptionExtension
+    {
+        private static StringBuilder stringBuilder;
+
+        public static string ToLongString(this PatternOption opt)
+        {
+            if (opt == PatternOption.None)
+            {
+                return "";
+            }
+            if (stringBuilder == null)
+            {
+                stringBuilder = new StringBuilder();
+            }
+            else
+            {
+                stringBuilder.Length = 0;
+            }
+            foreach (PatternOption item in Enum.GetValues(typeof(PatternOption)))
+            {
+                if (opt.HasFlag(item) & item != PatternOption.None)
+                {
+                    stringBuilder.Append(item.ToString());
+                    stringBuilder.Append(", ");
+                }
+            }
+            stringBuilder.Length -= 2;
+            return stringBuilder.ToString();
+        }
     }
 
     public abstract class Pattern

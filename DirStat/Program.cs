@@ -72,7 +72,9 @@ namespace DirStat
     public class PatternMatch
     {
         public string Pattern { get; set; }
+        public string PatternOptions { get; set; }
         public string Path { get; set; }
+        public string Type { get; set; }
         public long Size { get; set; }
         public DateTime Created { get; set; }
         public DateTime Modified { get; set; }
@@ -464,7 +466,9 @@ namespace DirStat
                                             analysisData.PatternMatchList.Add(new PatternMatch
                                             {
                                                 Pattern = pattern.PatternString,
+                                                PatternOptions = pattern.Options.ToLongString(),
                                                 Path = fullPath,
+                                                Type = "Directory",
                                                 Size = 0,
                                                 Created = DateTime.FromFileTime(createdFileTime),
                                                 Modified = DateTime.FromFileTime(modifiedFileTime)
@@ -494,7 +498,9 @@ namespace DirStat
                                         analysisData.PatternMatchList.Add(new PatternMatch
                                         {
                                             Pattern = pattern.PatternString,
+                                            PatternOptions = pattern.Options.ToLongString(),
                                             Path = fullPath,
+                                            Type = "File",
                                             Size = fileSize,
                                             Created = DateTime.FromFileTime(createdFileTime),
                                             Modified = DateTime.FromFileTime(modifiedFileTime)

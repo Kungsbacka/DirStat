@@ -49,7 +49,7 @@ namespace DirStat
         }
     }
 
-    public abstract class Pattern
+    public abstract class Pattern : IPattern
     {
         public string PatternString { get; }
         public PatternOption Options { get; }
@@ -61,12 +61,18 @@ namespace DirStat
         public abstract bool IsMatch(string input);
     }
 
+
+    public interface IPattern
+    {
+        bool IsMatch(string input);
+    }
+
     public class SimplePattern : Pattern
     {
-        private string subString;
-        private bool contains;
-        private bool startsWith;
-        private bool endsWith;
+        private readonly string subString;
+        private readonly bool contains;
+        private readonly bool startsWith;
+        private readonly bool endsWith;
 
         public SimplePattern(string pattern, PatternOption options) : base(pattern, options)
         {

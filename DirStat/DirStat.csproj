@@ -59,6 +59,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DuplicateFile.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="PatternMatch.cs" />
     <Compile Include="Program.cs" />

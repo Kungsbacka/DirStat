@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text.RegularExpressions;
 using static System.Console;
 using static DirStat.NativeMethods;
 using Newtonsoft.Json;
@@ -175,6 +174,8 @@ namespace DirStat
             public bool AnalyzeFileExtensionForPatternMatchOnly;
             public bool FormatJsonOutput;
             public bool GroupOnSubdirectories;
+            public bool CheckForDuplicateFiles = true;
+            public int LongPathLimit = 260;
         }
 
         static Options ParseCommandLine(string[] args)
@@ -205,6 +206,27 @@ namespace DirStat
                                 break;
                             }
                             _opt.PatternFilePath = args[++i];
+                            break;
+                        case "pl":
+                        case "-path-limit":
+                            if (i + 1 >= args.Length)
+                            {
+                                _opt.ErrorMessage = "--path-limit must be followed by an integer.";
+                                break;
+                            }
+                            if (int.TryParse(args[++i], out int limit))
+                            {
+                                if (limit < 1)
+                                {
+                                    _opt.ErrorMessage = "--path-limit must be greater than zero (0).";
+                                    break;
+                                }
+                                _opt.LongPathLimit = limit;
+                            }
+                            else
+                            {
+                                _opt.ErrorMessage = "Unable to parse --path-limit as an integer.";
+                            }
                             break;
                         case "na":
                         case "-no-age":
@@ -295,19 +317,23 @@ namespace DirStat
             WriteLine();
             WriteLine("  -m, --match <file>");
             WriteLine("      read patterns from a file, one pattern per line. Pattern matching");
-            WriteLine("      options can be inserted on a line beginning with two colons (::)");
-            WriteLine("      and separated by space. Options are: FILE for matching files,");
-            WriteLine("      DIRECTORY for matching directories, PATH for matching on full path,");
-            WriteLine("      NAME for matching on file name only, SIMPLE for simple wildcard");
-            WriteLine("      matching with asterisk (*) at the start, the end or both, and finally");
-            WriteLine("      REGEX for regular expressions. SIMPLE and REGEX cannot be combined.");
-            WriteLine("      All patterns that come after a line with options, are govenred by the");
+            WriteLine("      can be controlled by inserting pattern matching options a separate");
+            WriteLine("      line beginning with two colons (::) and separated by space.");
+            WriteLine("      The following options are availabe: FILE for matching files, DIRECTORY");
+            WriteLine("      for matching directories, PATH for matching on full path, NAME for");
+            WriteLine("      matching on file name only, SIMPLE for simple wildcard matching with");
+            WriteLine("      asterisk (*) at the start, the end or both, and finally REGEX for");
+            WriteLine("      matching using regular expressions. SIMPLE and REGEX cannot be combined.");
+            WriteLine("      All patterns that come after a line with options, are affected by the");
             WriteLine("      preceeding options. Multiple lines with options can be used. If no");
-            WriteLine("      options are specified, or if patterns come before an initial options");
-            WriteLine("      line, the following default options apply: simple match that match on");
-            WriteLine("      file and name only (SIMPLE FILE NAME). All matching (including regex)");
-            WriteLine("      is case insensitive. If a name or path matches multiple patterns, only");
-            WriteLine("      the first match is reported.");
+            WriteLine("      line with options is present, or if patterns come before an initial");
+            WriteLine("      options line, the following default options apply: simple match that");
+            WriteLine("      match on name and matches only files (SIMPLE NAME FILE). All matching");
+            WriteLine("      (including regex) is case insensitive. If a name or path matches");
+            WriteLine("      multiple patterns, only the first match is reported.");
+            WriteLine();
+            WriteLine("  -pl, --path-limit <limit>");
+            WriteLine("      specify limit for what is considered a long path. Default is 260 characters.");
             WriteLine();
             WriteLine("  -na, --no-age");
             WriteLine("      leave out file age statisticts in the result.");
@@ -396,7 +422,10 @@ namespace DirStat
                     return 1;
                 }
             }
+            if (_opt.CheckForDuplicateFiles)
+            {
 
+            }
             var directoryItemList = new List<DirectoryItem>(_opt.DirectoryItemList.Count);
             foreach (var directoryItem in _opt.DirectoryItemList)
             {
@@ -447,7 +476,7 @@ namespace DirStat
                                     findFileData.ftCreationTime_dwLowDateTime);
                             long modifiedFileTime = (long)((ulong)findFileData.ftLastWriteTime_dwHighDateTime << 32 |
                                     findFileData.ftLastWriteTime_dwLowDateTime);
-                            if (fullPath.Length > 260)
+                            if (fullPath.Length > _opt.LongPathLimit)
                             {
                                 analysisData.LongPathList.Add(fullPath);
                             }

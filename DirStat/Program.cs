@@ -317,12 +317,12 @@ namespace DirStat
             WriteLine();
             WriteLine("  -m, --match <file>");
             WriteLine("      read patterns from a file, one pattern per line. Pattern matching");
-            WriteLine("      can be controlled by inserting pattern matching options a separate");
+            WriteLine("      can be controlled by inserting pattern matching options on a separate");
             WriteLine("      line beginning with two colons (::) and separated by space.");
             WriteLine("      The following options are availabe: FILE for matching files, DIRECTORY");
             WriteLine("      for matching directories, PATH for matching on full path, NAME for");
-            WriteLine("      matching on file name only, SIMPLE for simple wildcard matching with");
-            WriteLine("      asterisk (*) at the start, the end or both, and finally REGEX for");
+            WriteLine("      matching on name only (not whole path), SIMPLE for simple wildcard matching");
+            WriteLine("      with asterisk (*) at the start, the end or both, and finally REGEX for");
             WriteLine("      matching using regular expressions. SIMPLE and REGEX cannot be combined.");
             WriteLine("      All patterns that come after a line with options, are affected by the");
             WriteLine("      preceeding options. Multiple lines with options can be used. If no");

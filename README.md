@@ -150,8 +150,7 @@ on a separate line beginning with :: and separated by space.
 
 ## Pattern matching - example
 
-    SIMPLE FILE NAME
-
+    ::SIMPLE FILE NAME
     *.pdf
     Report*
     *secure*

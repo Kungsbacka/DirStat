@@ -147,13 +147,17 @@ on a separate line beginning with :: and separated by space.
 * __FILE__ Mathc only files and not folders.
 * __DIRECTORY__ Match only folders and not files.
 
-      ::SIMPLE FILE NAME
-      *.pdf
-      Report*
-      *secure*
 
-      ::SIMPLE DIRECTORY NAME
-      System
+## Pattern matching - example
 
-      ::REGEX FILE
-      Report (Sally|John)\.xlsx$
+    SIMPLE FILE NAME
+
+    *.pdf
+    Report*
+    *secure*
+
+    ::SIMPLE DIRECTORY NAME
+    System
+
+    ::REGEX FILE
+    Report (Sally|John)\.xlsx$

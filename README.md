@@ -64,13 +64,13 @@ JSON file (see format below).
 The output JSON has the structure you see below, where every folder in the folder list gets
 its own entry.
 
-* __Directory__ is the base directory and an optional tag list that is read from the file list. It can be used to attach metadata to scanned directories that can be used when analyzingthe data.
+* __Directory__ is the base directory and an optional tag list that is read from the file list. Useful for attaching metadata to scanned directories that can be used when analyzing the data later.
 * All sizes are in bytes.
-* __LongPathList__ is a list of paths whose length is longer than 260 characters, or the number of characters specified by the -pl argument.
-* __FailedDirectoryList__ contains a list of all paths that could not be scanned.
-* If pattern matching is specified, __PatternMatchList__  contains a list if all matched paths.
-* __FileExtensionList__ has detailed information about all file extensions found.
-* __FileChangeList__ groups files into different age groups based on when they were modified. The groups are: 1, 2, 3, 4, 5, 10, 20, 30, 182, 365, 730, 1095, 1460, 1825, 2492 and 3650 days ago.
+* __LongPathList__ is a list of paths longer than 260 characters, or the number of characters specified by the -pl argument.
+* __FailedDirectoryList__ contains a list of paths that could not be scanned.
+* If pattern matching is specified, __PatternMatchList__  contains a list if matched paths.
+* __FileExtensionList__ lists file extensions with size and count.
+* __FileChangeList__ groups files into different age groups based on when they were created or modified. The groups are: 1, 2, 3, 4, 5, 10, 20, 30, 182, 365, 730, 1095, 1460, 1825, 2492 and 3650 days ago.
 
 ```json
 [
@@ -117,11 +117,11 @@ its own entry.
 
 
 
-## File list
+## Folder list
 
 The folder list contains all folders that should be scanned and is specified using -l (or --list).
 
-* __Path__ is the path that should be scanned.
+* __Path__ is the path to the folder that should be scanned.
 * __GroupOnSubdirectories__ can be used to report each subdirectory directly below the specified path individualy. One scenario is a share with home directories where you want a report on each individual directory.
 * __TagList__ contains a list of key value pairs that is transferred unchanged to the report file. Useful for adding metadata to scanned folders.
 
@@ -132,8 +132,8 @@ The folder list contains all folders that should be scanned and is specified usi
         "GroupOnSubdirectories": true,
         "TagList": [
             {
-                "Value": "HR",
                 "Name": "Department"
+                "Value": "HR",
             }
         ]
     }
@@ -143,12 +143,12 @@ The folder list contains all folders that should be scanned and is specified usi
 ## Pattern matching
 
 Pattern matching is controlled by rules that are read from a file specified by -m (--match).
-The file can contain hints to how the different patterns should be used. Hints are placed
+The file can contain hints on how the different patterns should be used. Hints are placed
 on a separate line beginning with :: and separated by space.
 
-* __SIMPLE__ Patterns below users simple wildcard matching with an asterisk (*) in the beginning, end or both. All other asterisks will be matched as a litteral character.
-* __REGEX__ Patterns below uses regular expression matching and should contain vaild regex.
-* __NAME__ Match only on the name (file or folder) and not the whole path.
+* __SIMPLE__ Patterns below uses simple wildcard matching with an asterisk (*) at the beginning, end or both. All other asterisks will be matched as a litteral character.
+* __REGEX__ Patterns below uses regular expression matching and should contain a vaild regex.
+* __NAME__ Match only on name (file or folder) and not the whole path.
 * __FILE__ Mathc only files and not folders.
 * __DIRECTORY__ Match only folders and not files.
 
@@ -164,4 +164,5 @@ on a separate line beginning with :: and separated by space.
     System
 
     ::REGEX FILE
-    Report (Sally|John)\.xlsx$
+    Report (X|Y)\.xlsx$
+    

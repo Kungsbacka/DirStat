@@ -147,7 +147,7 @@ namespace DirStat
             FailedDirectoryList = new List<string>();
             FileExtensionDictionary = new Dictionary<string, FileExtension>();
             FileChangedDictionary = new Dictionary<int, FileChanged>();
-            foreach (int days in new int[] { 1, 2, 3, 4, 5, 10, 20, 30, 182, 365, 730, 1095, 1460, 1825 })
+            foreach (int days in new int[] { 1, 2, 3, 4, 5, 10, 20, 30, 182, 365, 730, 1095, 1460, 1825, 2492, 3650 })
             {
                 FileChangedDictionary.Add(days, new FileChanged(days));
             }
@@ -171,6 +171,7 @@ namespace DirStat
             public bool PrintUsageAndExit;
             public bool AnalyzeFileAge = true;
             public bool AnalyzeFileExtension = true;
+            public bool AnalyzeFileAgeForPatternMatchOnly;
             public bool AnalyzeFileExtensionForPatternMatchOnly;
             public bool FormatJsonOutput;
             public bool GroupOnSubdirectories;
@@ -236,6 +237,10 @@ namespace DirStat
                         case "-no-ext":
                             _opt.AnalyzeFileExtension = false;
                             break;
+                        case "pa":
+                        case "-pattern-age":
+                            _opt.AnalyzeFileAgeForPatternMatchOnly = true;
+                            break;
                         case "pe":
                         case "-pattern-ext":
                             _opt.AnalyzeFileExtensionForPatternMatchOnly = true;
@@ -291,6 +296,10 @@ namespace DirStat
             {
                 _opt.ErrorMessage = "No directory specified";
             }
+            else if (!_opt.AnalyzeFileAge && _opt.AnalyzeFileAgeForPatternMatchOnly)
+            {
+                _opt.ErrorMessage = "Parameters --no-age and --pattern-age cannot be used together";
+            }
             else if (!_opt.AnalyzeFileExtension && _opt.AnalyzeFileExtensionForPatternMatchOnly)
             {
                 _opt.ErrorMessage = "Parameters --no-ext and --pattern-ext cannot be used together";
@@ -341,6 +350,11 @@ namespace DirStat
             WriteLine("  -ne, --no-ext");
             WriteLine("      leave out file extension statistics in the result.");
             WriteLine();
+            WriteLine("  -pa, --pattern-age");
+            WriteLine("      if pattern matching is enabled, only age for files that");
+            WriteLine("      match a pattern gets added to the file age statistics.");
+            WriteLine("      This parameter and the --no-age parameter cannot be used together.");
+            WriteLine();
             WriteLine("  -pe, --pattern-ext");
             WriteLine("      if pattern matching is enabled, only extensions for files that");
             WriteLine("      match a pattern gets added to the file extension statistics.");
@@ -385,7 +399,6 @@ namespace DirStat
                 PrintError(_opt.ErrorMessage);
                 return 1;
             }
-            // Read directory list file
             if (!string.IsNullOrEmpty(_opt.ListFilePath))
             {
                 string content;
@@ -400,7 +413,6 @@ namespace DirStat
                 }
                 _opt.DirectoryItemList = JsonConvert.DeserializeObject<List<DirectoryItem>>(content);
             }
-            // Read pattern file
             var matchDirectory = new List<Pattern>();
             var matchFile = new List<Pattern>();
             if (!string.IsNullOrEmpty(_opt.PatternFilePath))
@@ -554,19 +566,22 @@ namespace DirStat
                                 }
                                 if (_opt.AnalyzeFileAge)
                                 {
-                                    int createdDaysAgo = (int)((currentFileTime - createdFileTime) / FileTimeIntervalsIn24Hours);
-                                    int modifiedDaysAgo = (int)((currentFileTime - modifiedFileTime) / FileTimeIntervalsIn24Hours);
-                                    foreach (var fileAccess in analysisData.FileChangedDictionary)
+                                    if (!_opt.AnalyzeFileAgeForPatternMatchOnly || (_opt.AnalyzeFileAgeForPatternMatchOnly && isMatch))
                                     {
-                                        if (fileAccess.Key <= createdDaysAgo)
+                                        int createdDaysAgo = (int)((currentFileTime - createdFileTime) / FileTimeIntervalsIn24Hours);
+                                        int modifiedDaysAgo = (int)((currentFileTime - modifiedFileTime) / FileTimeIntervalsIn24Hours);
+                                        foreach (var fileAccess in analysisData.FileChangedDictionary)
                                         {
-                                            fileAccess.Value.Created.Count++;
-                                            fileAccess.Value.Created.Size += fileSize;
-                                        }
-                                        if (createdFileTime != modifiedFileTime && fileAccess.Key <= modifiedDaysAgo)
-                                        {
-                                            fileAccess.Value.Modified.Count++;
-                                            fileAccess.Value.Modified.Size += fileSize;
+                                            if (fileAccess.Key <= createdDaysAgo)
+                                            {
+                                                fileAccess.Value.Created.Count++;
+                                                fileAccess.Value.Created.Size += fileSize;
+                                            }
+                                            if (createdFileTime != modifiedFileTime && fileAccess.Key <= modifiedDaysAgo)
+                                            {
+                                                fileAccess.Value.Modified.Count++;
+                                                fileAccess.Value.Modified.Size += fileSize;
+                                            }
                                         }
                                     }
                                 }

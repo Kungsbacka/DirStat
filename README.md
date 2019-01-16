@@ -70,7 +70,7 @@ its own entry.
 * __FailedDirectoryList__ contains a list of all paths that could not be scanned.
 * If pattern matching is specified, __PatternMatchList__  contains a list if all matched paths.
 * __FileExtensionList__ has detailed information about all file extensions found.
-* __FileChangeList__ groups files into different age groups based on when they were modified. The groups are: 1, 2, 3, 4, 5, 10, 20, 30, 182, 365, 730, 1095, 1460 or 1825 days ago.
+* __FileChangeList__ groups files into different age groups based on when they were modified. The groups are: 1, 2, 3, 4, 5, 10, 20, 30, 182, 365, 730, 1095, 1460, 1825, 2492 and 3650 days ago.
 
 ```json
 [

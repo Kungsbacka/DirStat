@@ -132,8 +132,8 @@ The folder list contains all folders that should be scanned and is specified usi
         "GroupOnSubdirectories": true,
         "TagList": [
             {
-                "Name": "Department"
-                "Value": "HR",
+                "Name": "Department",
+                "Value": "HR"
             }
         ]
     }

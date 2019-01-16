@@ -35,6 +35,11 @@ JSON file (see format below).
     -ne, --no-ext
         leave out file extension statistics in the result.
 
+    -pa, --pattern-age
+        if pattern matching is enabled, only age for files that
+        match a pattern gets added to the file age statistics.
+        This parameter and the --no-ext parameter cannot be used together.
+
     -pe, --pattern-ext
         if pattern matching is enabled, only extensions for files that
         match a pattern gets added to the file extension statistics.

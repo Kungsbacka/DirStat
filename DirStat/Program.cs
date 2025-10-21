@@ -4,15 +4,18 @@ using System.Diagnostics;
 using System.IO;
 using static System.Console;
 using static DirStat.NativeMethods;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Linq;
 
 namespace DirStat
 {
-    public class DirectoryItem
+    internal sealed class DirectoryItem
     {
         public string Path { get; set; }
         public List<Tag> TagList { get; set; }
+
+        [JsonIgnore]
         public bool GroupOnSubdirectories { get; set; }
 
         public DirectoryItem(string path, bool groupOnImmediateChildren)
@@ -29,14 +32,9 @@ namespace DirStat
             TagList = tagList;
             GroupOnSubdirectories = groupOnImmediateChildren;
         }
-
-        public bool ShouldSerializeGroupOnSubdirectories()
-        {
-            return false;
-        }
     }
 
-    public class Tag
+    internal sealed class Tag
     {
         public string Name { get; set; }
         public string Value { get; set; }
@@ -48,13 +46,13 @@ namespace DirStat
         }
     }
 
-    public class SizeAndCount
+    internal sealed class SizeAndCount
     {
         public long Size { get; set; }
         public long Count { get; set; }
     }
 
-    public class FileChanged
+    internal sealed class FileChanged
     {
         public int DaysAgo { get; set; }
         public SizeAndCount Created { get; set; }
@@ -68,7 +66,7 @@ namespace DirStat
         }
     }
 
-    public class PatternMatch
+    internal sealed class PatternMatch
     {
         public string Pattern { get; set; }
         public string PatternOptions { get; set; }
@@ -79,7 +77,7 @@ namespace DirStat
         public DateTime Modified { get; set; }
     }
 
-    public class FileExtension
+    internal sealed class FileExtension
     {
         public string Extension { get; set; }
         public long Size { get; set; }
@@ -91,7 +89,7 @@ namespace DirStat
         }
     }
 
-    public class AnalysisData
+    internal sealed class AnalysisData
     {
         public DirectoryItem Directory { get; set; }
         public string LongestFilePath { get; set; }
@@ -107,11 +105,11 @@ namespace DirStat
                 return (int)Math.Round(ScanTime.TotalMilliseconds, 0);
             }
         }
-        [JsonProperty(PropertyName = "LongPathList")]
+        [JsonPropertyName("LongPathList")]
         public List<string> LongPathList { get; set; }
-        [JsonProperty(PropertyName = "FailedDirectoryList")]
+        [JsonPropertyName("FailedDirectoryList")]
         public List<string> FailedDirectoryList { get; set; }
-        [JsonProperty(PropertyName = "PatternMatchList")]
+        [JsonPropertyName("PatternMatchList")]
         public List<PatternMatch> PatternMatchList { get; set; }
         [JsonIgnore]
         internal Dictionary<string, FileExtension> FileExtensionDictionary { get; set; }
@@ -154,14 +152,15 @@ namespace DirStat
         }
     }
 
-    class Program
+    sealed class Program
     {
         const long FileTimeIntervalsIn24Hours = 864000000000L;
 
         static Options _opt;
 
+        static JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions();
 
-        class Options
+        sealed class Options
         {
             public List<DirectoryItem> DirectoryItemList = new List<DirectoryItem>();
             public string ErrorMessage;
@@ -187,11 +186,11 @@ namespace DirStat
             {
                 if (args[i][0] == '-' || args[i][0] == '/')
                 {
-                    string arg = args[i].Substring(1).ToLower();
+                    string arg = args[i].Substring(1).ToUpperInvariant();
                     switch (arg)
                     {
-                        case "l":
-                        case "-list":
+                        case "L":
+                        case "-LIST":
                             if (i + 1 >= args.Length)
                             {
                                 _opt.ErrorMessage = "--list must be followed by a path to a file.";
@@ -199,8 +198,8 @@ namespace DirStat
                             }
                             _opt.ListFilePath = args[++i];
                             break;
-                        case "m":
-                        case "-match":
+                        case "M":
+                        case "-MATCH":
                             if (i + 1 >= args.Length)
                             {
                                 _opt.ErrorMessage = "--match must be followed by a path to a file.";
@@ -208,8 +207,8 @@ namespace DirStat
                             }
                             _opt.PatternFilePath = args[++i];
                             break;
-                        case "pl":
-                        case "-path-limit":
+                        case "PL":
+                        case "-PATH-LIMIT":
                             if (i + 1 >= args.Length)
                             {
                                 _opt.ErrorMessage = "--path-limit must be followed by an integer.";
@@ -229,24 +228,24 @@ namespace DirStat
                                 _opt.ErrorMessage = "Unable to parse --path-limit as an integer.";
                             }
                             break;
-                        case "na":
-                        case "-no-age":
+                        case "NA":
+                        case "-NO-AGE":
                             _opt.AnalyzeFileAge = false;
                             break;
-                        case "ne":
-                        case "-no-ext":
+                        case "NE":
+                        case "-NO-EXT":
                             _opt.AnalyzeFileExtension = false;
                             break;
-                        case "pa":
-                        case "-pattern-age":
+                        case "PA":
+                        case "-PATTERN-AGE":
                             _opt.AnalyzeFileAgeForPatternMatchOnly = true;
                             break;
-                        case "pe":
-                        case "-pattern-ext":
+                        case "PE":
+                        case "-PATTERN-EXT":
                             _opt.AnalyzeFileExtensionForPatternMatchOnly = true;
                             break;
-                        case "o":
-                        case "-output-file":
+                        case "O":
+                        case "-OUTPUT-FILE":
                             if (i + 1 >= args.Length)
                             {
                                 _opt.ErrorMessage = "--output-file must be followed by a path to a file.";
@@ -254,16 +253,16 @@ namespace DirStat
                             }
                             _opt.OutputFilePath = args[++i];
                             break;
-                        case "f":
-                        case "-format-json":
+                        case "F":
+                        case "-FORMAT-JSON":
                             _opt.FormatJsonOutput = true;
                             break;
-                        case "gs":
-                        case "-group-on-subdir":
+                        case "GS":
+                        case "-GROUP-ON-SUBDIR":
                             _opt.GroupOnSubdirectories = true;
                             break;
-                        case "h":
-                        case "-help":
+                        case "H":
+                        case "-HELP":
                             _opt.PrintUsageAndExit = true;
                             break;
                         default:
@@ -366,7 +365,7 @@ namespace DirStat
             WriteLine();
             WriteLine("  -o, --output-file <file>");
             WriteLine("      results are written to this file. If this parameter is omitted, the results");
-            WriteLine("      are written to data.csv.");
+            WriteLine("      are written to data.json.");
             WriteLine();
             WriteLine("  -f, --format-json");
             WriteLine("      adds line breaks and indentation to JSON output.");
@@ -411,7 +410,7 @@ namespace DirStat
                     PrintError($"File not found: {_opt.ListFilePath}");
                     return 1;
                 }
-                _opt.DirectoryItemList = JsonConvert.DeserializeObject<List<DirectoryItem>>(content);
+                _opt.DirectoryItemList = JsonSerializer.Deserialize<List<DirectoryItem>>(content);
             }
             var matchDirectory = new List<Pattern>();
             var matchFile = new List<Pattern>();
@@ -438,6 +437,9 @@ namespace DirStat
             {
 
             }
+
+            _jsonSerializerOptions.WriteIndented = _opt.FormatJsonOutput;
+
             var directoryItemList = new List<DirectoryItem>(_opt.DirectoryItemList.Count);
             foreach (var directoryItem in _opt.DirectoryItemList)
             {
@@ -453,8 +455,8 @@ namespace DirStat
                     directoryItemList.Add(directoryItem);
                 }
             }
-            long currentFileTime = (long)((DateTime.UtcNow - (new DateTime(1601, 1, 1))).TotalMilliseconds * 10000);
-            WIN32_FIND_DATA findFileData = new WIN32_FIND_DATA();
+            long currentFileTime = (long)((DateTime.UtcNow - new DateTime(1601, 1, 1)).TotalMilliseconds * 10000);
+            var findFileData = new WIN32_FIND_DATA();
             var stack = new Stack<string>();
             var stopwatch = new Stopwatch();
             var analyisDataList = new List<AnalysisData>();
@@ -470,7 +472,7 @@ namespace DirStat
                     IntPtr hFind = FindFirstFileEx(
                         path + @"\*",
                         FINDEX_INFO_LEVELS.FindExInfoBasic,
-                        findFileData,
+                        ref findFileData,
                         FINDEX_SEARCH_OPS.FindExSearchNameMatch,
                         IntPtr.Zero,
                         FIND_FIRST_EX_LARGE_FETCH
@@ -553,9 +555,8 @@ namespace DirStat
                                 {
                                     if (!_opt.AnalyzeFileExtensionForPatternMatchOnly || (_opt.AnalyzeFileExtensionForPatternMatchOnly && isMatch))
                                     {
-                                        string ext = Path.GetExtension(findFileData.cFileName).ToLower();
-                                        FileExtension fileExtension;
-                                        if (!analysisData.FileExtensionDictionary.TryGetValue(ext, out fileExtension))
+                                        string ext = Path.GetExtension(findFileData.cFileName).ToUpperInvariant();
+                                        if (!analysisData.FileExtensionDictionary.TryGetValue(ext, out FileExtension fileExtension))
                                         {
                                             fileExtension = new FileExtension(ext);
                                             analysisData.FileExtensionDictionary.Add(ext, fileExtension);
@@ -587,7 +588,7 @@ namespace DirStat
                                 }
                             }
                         }
-                        while (FindNextFile(hFind, findFileData));
+                        while (FindNextFile(hFind, ref findFileData));
                         FindClose(hFind);
                     }
                 }
@@ -596,15 +597,8 @@ namespace DirStat
             }
             try
             {
-                using (var streamWriter = new StreamWriter(_opt.OutputFilePath, false, System.Text.Encoding.UTF8))
-                {
-                    var jsonSerializer = new JsonSerializer();
-                    if (_opt.FormatJsonOutput)
-                    {
-                        jsonSerializer.Formatting = Formatting.Indented;
-                    }
-                    jsonSerializer.Serialize(streamWriter, analyisDataList);
-                }
+                string jsonString = JsonSerializer.Serialize(analyisDataList, _jsonSerializerOptions);
+                File.WriteAllText(_opt.OutputFilePath, jsonString, System.Text.Encoding.UTF8);
             }
             catch (IOException)
             {

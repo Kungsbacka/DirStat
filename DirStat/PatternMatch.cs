@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace DirStat
 {
 
-    public enum PatternOption
+    internal enum PatternOption
     {
         None        = 0,
         File        = 0b000001,
@@ -18,7 +18,7 @@ namespace DirStat
         Regex       = 0b100000,
     }
 
-    public static class PatternOptionExtension
+    internal static class PatternOptionExtension
     {
         private static StringBuilder stringBuilder;
 
@@ -49,7 +49,7 @@ namespace DirStat
         }
     }
 
-    public abstract class Pattern : IPattern
+    internal abstract class Pattern : IPattern
     {
         public string PatternString { get; }
         public PatternOption Options { get; }
@@ -62,12 +62,12 @@ namespace DirStat
     }
 
 
-    public interface IPattern
+    internal interface IPattern
     {
         bool IsMatch(string input);
     }
 
-    public class SimplePattern : Pattern
+    internal sealed class SimplePattern : Pattern
     {
         private readonly string subString;
         private readonly bool contains;
@@ -135,7 +135,7 @@ namespace DirStat
         }
     }
 
-    public class RegexPattern : Pattern
+    internal sealed class RegexPattern : Pattern
     {
         private Regex regex;
 
@@ -150,8 +150,10 @@ namespace DirStat
         }
     }
 
-    public static class PatternFileParser
+    internal static class PatternFileParser
     {
+        internal static readonly char[] trimChars = new char[] { ' ', ':' };
+
         public static IEnumerable<Pattern> Parse(string patternFilePath)
         {
             var result = new List<Pattern>();
@@ -167,11 +169,11 @@ namespace DirStat
                 if (line.StartsWith("::", StringComparison.Ordinal))
                 {
                     options = PatternOption.None;
-                    string optionString = line.Trim(new char[] { ' ', ':' });
+                    string optionString = line.Trim(trimChars);
                     string[] parts = optionString.Split(' ');
                     foreach (string item in parts)
                     {
-                        switch (item.ToUpper())
+                        switch (item.ToUpperInvariant())
                         {
                             case "FILE":
                                 options |= PatternOption.File;

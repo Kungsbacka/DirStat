@@ -22,9 +22,8 @@ namespace DirStat
         internal const int FIND_FIRST_EX_LARGE_FETCH = 2;
         internal const int FILE_ATTRIBUTE_DIRECTORY = 16;
 
-        [BestFitMapping(false)]
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        internal class WIN32_FIND_DATA
+        internal struct WIN32_FIND_DATA
         {
             internal int dwFileAttributes;
             internal uint ftCreationTime_dwLowDateTime;
@@ -43,21 +42,24 @@ namespace DirStat
             internal string cAlternateFileName;
         }
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         [DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern IntPtr FindFirstFileEx(
             string lpFileName,
             FINDEX_INFO_LEVELS fInfoLevelId,
-            [In] [Out] WIN32_FIND_DATA lpFindFileData,
+            ref WIN32_FIND_DATA lpFindFileData,
             FINDEX_SEARCH_OPS fSearchOp,
             IntPtr lpSearchFilter,
             int dwAdditionalFlags);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         [DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Auto, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool FindNextFile(
             IntPtr hFindFile,
-            [MarshalAs(UnmanagedType.LPStruct)] [In] [Out] WIN32_FIND_DATA lpFindFileData);
+            ref WIN32_FIND_DATA lpFindFileData);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         [DllImport("kernel32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool FindClose(IntPtr handle);

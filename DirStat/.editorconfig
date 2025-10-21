@@ -1,0 +1,9 @@
+[*.{cs,vb}]
+
+# Remove suggested code style that does not compile on .NET Framework projects
+
+# IDE0305: Simplify collection initialization
+dotnet_style_prefer_collection_expression = never
+
+# IDE0057: Use range operator
+csharp_style_prefer_range_operator = false

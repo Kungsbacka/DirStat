@@ -51,7 +51,7 @@ JSON file (see format below).
 
     -o, --output-file <file>
         results are written to this file. If this parameter is omitted, the results
-        are written to data.csv.
+        are written to data.json.
 
     -f, --format-json
         adds line breaks and indentation to JSON output.

@@ -6,11 +6,11 @@ JSON file (see format below).
 ## Arguments
 
     -l, --list <file>
-        read paths to scan from a file, one path per line. If both a list and"
-        a directory is specified, the directory is added to the list"
+        read paths to scan from a file, one path per line. If both a list and
+        a directory is specified, the directory is added to the list
 
     -m, --match <file>
-        read patterns from a file, one pattern per line. Pattern matching"
+        read patterns from a file, one pattern per line. Pattern matching
         can be controlled by inserting pattern matching options on a separate
         line beginning with two colons (::) and separated by space.
         The following options are availabe: FILE for matching files, DIRECTORY
@@ -61,10 +61,9 @@ JSON file (see format below).
 
 ## Output file
 
-The output JSON has the structure you see below, where every folder in the folder list gets
-its own entry.
+The output JSON has the structure you see below, where every folder in the folder list gets its own entry.
 
-* __Directory__ is the base directory and an optional tag list that is read from the file list. Useful for attaching metadata to scanned directories that can be used when analyzing the data later.
+* __Directory__ is the base directory and an optional tag list that is read from the file list. Useful for attaching metadata to scanned directories that can later be used when analyzing.
 * All sizes are in bytes.
 * __LongPathList__ is a list of paths longer than 260 characters, or the number of characters specified by the -pl argument.
 * __FailedDirectoryList__ contains a list of paths that could not be scanned.
@@ -143,7 +142,7 @@ The folder list contains all folders that should be scanned and is specified usi
 ## Pattern matching
 
 Pattern matching is controlled by rules that are read from a file specified by -m (--match).
-The file can contain hints on how the different patterns should be used. Hints are placed
+The file can contain options that control how the different patterns should be used. Options are placed
 on a separate line beginning with :: and separated by space.
 
 * __SIMPLE__ Patterns below uses simple wildcard matching with an asterisk (*) at the beginning, end or both. All other asterisks will be matched as a litteral character.
